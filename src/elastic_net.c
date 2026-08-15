@@ -42,7 +42,7 @@
  *     3 - if maxit was reached by coord_descent_cov()
  */
 int elastic_net_cov(const double *Z_in, const double *z_in, int n, int p, const double *lambdas, int n_lambda, double alpha,
-                          double thresh, int maxit, double *beta_out, double *intercept_out, double *C, unsigned char *has_row)
+                          double thresh, int maxit, double *beta_out, double *intercept_out, double *C, char *has_row)
 {
 
     /* Return 2 for invalid inputs */
@@ -113,7 +113,7 @@ int elastic_net_cov(const double *Z_in, const double *z_in, int n, int p, const 
         
 
         /* Back-transform a copy of beta so beta stays standardised for the next lambda's warm start */
-        double *bcol = beta_out + (size_t)l * p;  // pointer to the start of this lambda's row of beta_out
+        double *bcol = beta_out + (size_t)l * p;  // pointer to the start of this lambda's column of beta_out
         memcpy(bcol, beta, (size_t)p * sizeof(double)); // copy each beta from each coord_descent_cov for each lambda into bcol
 
         /* Back-transform beta to the original scale */

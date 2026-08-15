@@ -24,6 +24,7 @@
  * Version: 5.0 
  * Date: 2026-08-12
  */
+#include <stdlib.h>
 #include <math.h>
 
 #include "elastic_net_functions.h"
@@ -76,7 +77,7 @@ static inline double update_beta(double *beta_k, double g_k, double l1, double l
  *   has_row  - length-p vector indictating which rows of C have already been computed
  * 
  */
-static inline void update_g(const double *Z, int n, int p, int k, double delta, double *g, double *C, unsigned char *has_row)
+static inline void update_g(const double *Z, int n, int p, int k, double delta, double *g, double *C, char *has_row)
 {
     double *C_k = C + (size_t)k * p; // pointer to the start of the k-th row of C 
 
@@ -134,7 +135,7 @@ static inline void update_g(const double *Z, int n, int p, int k, double delta, 
  * Returns 0 if converged, 1 if maxit was hit, 2 if invalid inputs were given
  */
 int coord_descent_cov(const double *Z, double *beta, int n, int p, double lambda, double alpha, double threshold, int maxit, 
-                      int *is_active, int *active_idx, double *g, double *C, unsigned char *has_row)
+                      int *is_active, int *active_idx, double *g, double *C, char *has_row)
 {
 
     /* Return 2 early for invalid inputs */
