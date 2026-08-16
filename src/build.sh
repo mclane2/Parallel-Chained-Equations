@@ -22,7 +22,7 @@ rm -f *.o *.so
 # To compile with warnings enabled, add "-Wall -Wextra" to PKG_CFLAGS
 
 # Compile ENCE and MICE DURR C code into a single .so
-PKG_CFLAGS="-fopenmp -O3 -march=native -funroll-loops -flto -Wall -Wextra" \
+PKG_CFLAGS="-fopenmp -O2 -march=native -funroll-loops -flto -Wall -Wextra" \
 PKG_LIBS="-fopenmp -flto" \
 R CMD SHLIB elastic_net_functions.c elastic_net.c ENCE_impute.c MICE_DURR_impute.c ENCE_MICE_R_wrapper.c \
   -o ENCE_MICE_DURR_impute.so

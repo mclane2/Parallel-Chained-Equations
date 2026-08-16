@@ -1,0 +1,117 @@
+### Simulate some data
+
+This code was adopted from Brian O'Sullivan's github repository https://github.com/BrianOSullivan-2000/ENCE_MICE_DURR
+
+This file simulates station-level climate data using a spatiotemporal Gaussian process.
+
+This code was used to create the file "simulated_daily_rainfall.csv" already on the repository. 
+Depending on the size of the dataset you choose, it can take a long time to run. 
+The "simulated_daily_rainfall.csv" in the repo is 1 year of daily observations across 60 stations (p = 60, n =365)
+
+```{r simulating rainfall}
+
+# Load in domain -> Republic of Ireland
+
+library(sf)
+library(sp)
+
+# Ireland shapefile received from 
+ireland_dsn <- "counties.json"
+ireland <- read_sf(dsn = ireland_dsn)
+crs <- CRS(SRS_string = "EPSG:29903")
+ireland <- st_transform(x = ireland, crs = crs)
+
+# Simulate some random station locations
+library(spatstat.geom)
+library(spatstat.random)
+
+set.seed(222)
+
+# Here you can control the size of the dataset (number of stations and number of times)
+no_stations <- 60  # p
+no_times <- 365    # n
+stations <- runifpoint(no_stations, win = as.owin(ireland))
+stations <- cbind(stations$x, stations$y)
+
+# Simulate spatiotemporal data for this network
+
+df <- data.frame(stno = rep(1:no_stations, no_times),
+                 east = rep(stations[, 1], no_times),
+                 north = rep(stations[, 2], no_times), 
+                 t = rep(1:no_times, each = no_stations), y = 1)
+
+# We'll use a separable Matern structure - this is pretty quick to simulate
+# Matern covariance function
+matern <- function(x, pars, kappa, ...){
+  
+  sig2 <- pars[1]; phi <- pars[2]
+  nugget <- ifelse(is.na(pars[3]), 0, pars[3])
+  
+  x <- as.matrix(x)
+  xphi <- x/phi
+  corr <- ifelse(xphi == 0, 1,
+                 ((2^(kappa-1)*gamma(kappa))^(-1)) *
+                   ((xphi)^kappa) *
+                   besselK(x = xphi, nu = kappa))
+  
+  V <- (sig2 * corr)
+  V[x == 0] <- V[x == 0] + nugget
+  return(V)
+}
+  
+sd <- as.matrix(dist(stations, diag = T, upper = T))
+td <- outer(0:(no_times-1), 0:(no_times-1), {function(x, y) abs(x-y)})
+
+s_cov_pars <- c(3, 3e5, 0.5)
+t_cov_pars <- c(2, 2, 0.5)
+kappas <- c(1.5, 1.5)
+s_cov <- matern(sd, s_cov_pars, kappas[1])
+t_cov <- matern(td, t_cov_pars, kappas[2])
+
+# Our covariance is the Kronecker product of t_cov with s_cov
+# ie V = V_t %x% V_s
+
+# We just need to simulate data. This can be sped up a lot by taking 
+# advantage of the fact that
+
+# t(chol(V)) = t(chol(V_t)) %x% t(chol(V_s))
+
+L <- t(chol(t_cov)) %x% t(chol(s_cov))
+
+# Add a global mean and a small global spatial trend
+formula <- as.formula("y ~ east + north")
+beta <- c(12, -1.2e-05, 1.3e-06)
+trend <- model.matrix(formula, df) %*% c(beta)
+
+# z -> random errors
+set.seed(222)
+z <- rnorm(no_stations * no_times)
+
+# Final simulated values
+df$y <- trend + (L %*% z)
+
+# Square data so it more closely follows the distribution observed
+# in Irish monthly rainfall
+df$y <- df$y^2
+
+hist(df$y, main = "Simulated Daily Rainfall", xlab = "mm")
+
+library(ggplot2)
+
+# Lets quickly look at the first month
+ggplot() +
+  geom_sf(data = ireland, color="gray80", fill = "#7affa7") +
+  
+  geom_point(data = df[df$t == 1, ],
+             mapping = aes(x=east, y=north, col=y), 
+             shape = 17, size = 3) + 
+  
+  scale_color_binned(low = "lightblue", high = "darkblue", n.breaks = 8) +
+  theme(axis.title = element_blank(),
+        panel.background = element_rect(fill="#c4fff9"))
+
+
+df <- df[order(df$stno, df$t), ]
+write.csv(df, "simulated_daily_rainfall.csv")
+
+```
