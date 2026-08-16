@@ -36,7 +36,7 @@ SEXP ence_impute_cycle_R(SEXP df_old_sexp, SEXP missing_sexp, SEXP folds_sexp, S
     if (failed == 2) Rf_error("ence_impute_cycle: invalid inputs passed");
     if (failed == 3) Rf_error("ence_impute_cycle: coordinate descent reached maxit without converging");
     if (failed == 4) Rf_error("ence_impute_cycle: data cannot support a fit (constant station, or too few observations per fold breaks standardise() function)");
-    if (failed == 5) Rf_error("ence_impute_cycle: df_old contains NaN or infinite values");
+    if (failed == 5) Rf_error("ence_impute_cycle: df_old contains NaN or infinite values (either present in the input or produced by the previous cycle's fit)");
     if (failed == 6) Rf_error("ence_impute_cycle: a thread failed to report a status code");
     if (failed == 7) Rf_error("ence_impute_cycle: could not open betas.csv for writing");
     if (failed)      Rf_error("ence_impute_cycle: unrecognised error code %d", failed);
