@@ -1,5 +1,5 @@
 
-# Filename: MICE_C.R 
+# Filename: MICE_DURR_C.R 
 # Author: Brian O'Sullivan (modified by Marc Lane)
 
 # Please refer to https://doi.org/10.1002/joc.8513 for further details 
@@ -21,7 +21,7 @@
 ## lambda_options must be passed in descending order. This is what allows the warmstart optimization to work effectively in the C coordinate descent solver
 
 
-MICE_DURR_C <- function(df, response = "y", m = 4, 
+MICE_DURR_C <- function(df, response = "y", m = 10, 
                       max_impute_cycles = 5, 
                       max_EM_cycles = 5, 
                       hyp_cycles = 2,

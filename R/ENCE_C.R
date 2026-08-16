@@ -30,6 +30,7 @@ ENCE_C <- function(df, response = "y",
                  init_method = c("mean", "idw"),
                  spatial_id = "stno", time_id = "t",
                  tol = 1,
+                 C = 15000,
                  transformation = {function(x) x},
                  reverse_transformation = {function(x) x},
                  truth = NULL,
@@ -48,6 +49,7 @@ ENCE_C <- function(df, response = "y",
   # init_method             -Method for getting starting imputed values
   # spatial_id, time_id     -Column names for locations and times
   # tol                     -Tolerance value for convergence
+  # C                       -Anisotropy for IDW
   # transformation          -Can do initial transformation of data
   # truth                   -Pre-masked column of values for all stations
   # masked_idx              -Index of masked values for validation
@@ -89,7 +91,7 @@ ENCE_C <- function(df, response = "y",
   # refer to functions in "idw.R"
   else if(init_method == "idw"){
     df[df$missing, ] <- IDW_ST(df[!df$missing, ], df[df$missing, ], 
-                               response, ...)
+                               response, C = C, ...)
   }
   else{stop("Error: invalid starting imputation method selected")}
   

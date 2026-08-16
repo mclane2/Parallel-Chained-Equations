@@ -35,7 +35,7 @@ IDW_ST <- function(data, newdata, response,
     # Get points and dates
     points <- SpatialPoints(cbind(data[[x_name]], data[[y_name]]))
     dates <- as.Date(as.vector(data[[t_name]]), origin = "1970-01-01")
-    C <- estimate_anisotropy(df, points, dates, response, ...)
+    C <- estimate_anisotropy(data, points, dates, response, ...)
   }
   
   # Scale separation in time by anisotropy
