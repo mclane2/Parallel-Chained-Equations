@@ -6,7 +6,7 @@ This file simulates station-level climate data using a spatiotemporal Gaussian p
 
 This code was used to create the file "simulated_daily_rainfall.csv" already on the repository. 
 Depending on the size of the dataset you choose, it can take a long time to run. 
-The "simulated_daily_rainfall.csv" in the repo is 1 year of daily observations across 60 stations (p = 60, n =365)
+The "simulated_daily_rainfall.csv" in the repo is 1 year of daily observations across 50 stations (p = 50,  n =365)
 
 ```{r simulating rainfall}
 
@@ -27,8 +27,8 @@ library(spatstat.random)
 
 set.seed(222)
 
-# Here you can control the size of the dataset (number of stations and number of times)
-no_stations <- 60  # p
+# Here you can control the size of the dataset (number of stations and number of observations)
+no_stations <- 50  # p
 no_times <- 365    # n
 stations <- runifpoint(no_stations, win = as.owin(ireland))
 stations <- cbind(stations$x, stations$y)
@@ -112,6 +112,6 @@ ggplot() +
 
 
 df <- df[order(df$stno, df$t), ]
-write.csv(df, "simulated_daily_rainfall.csv")
+write.csv(df, "simulated_daily_rainfall.csv", row.names = FALSE)
 
 ```

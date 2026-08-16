@@ -19,7 +19,7 @@ rm -f *.o *.so
 
 
 # To print the beta coefficients at the end of each cycle, add "-DWRITE_BETAS" to PKG_CFLAGS
-# To compile with warnings enabled, add "-Wall -Wextra" to PKG_CFLAGS
+# "-Wall -Wextra" flags compile with warnings enabled
 
 # Compile ENCE and MICE DURR C code into a single .so
 PKG_CFLAGS="-fopenmp -O2 -march=native -funroll-loops -flto -Wall -Wextra" \

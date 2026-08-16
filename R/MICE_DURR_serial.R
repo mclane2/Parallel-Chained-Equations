@@ -21,10 +21,14 @@
 MICE_DURR_serial <- function(df, response = "y", m = 10, 
                       max_impute_cycles = 5, 
                       max_EM_cycles = 5, 
+                      hyp_cycles = 2,
+                      impute_tol = 0,
                       init_method = c("mean", "idw"),
                       spatial_id = "stno", time_id = "t",
                       EM_tol = 1,
                       nclusters = 1,
+                      lambda_options = c(0.2, 0.15, 0.1, 0.05),
+                      alpha_options  = c(0.1, 0.35, 0.65, 0.9),
                       outfile = "MICE_DURR_log.txt",
                       C = 15000, x_name = "east", y_name = "north",
                       transformation = {function(x) x},
@@ -37,7 +41,11 @@ MICE_DURR_serial <- function(df, response = "y", m = 10,
   # init_method             -Method for getting starting imputed values
   # spatial_id, time_id     -Column names for locations and times
   # EM_tol                  -Tolerance for convergence of final values 
-  # nclusters               -Number of clusters if doing parallel computing
+  # hyp_cycles              -Number of cycles to fit hyperparameters
+  # impute_tol              -Tolerance for convergence between cycles when getting parameters
+  # nclusters               -Number of clusters (nodes) if doing parallel multiple imputation
+  # lambda_options          -Lambda choices for CV to pick from, must be in descending order
+  # alpha_options           -Alpha choices for CV to pick from
   # outfile                 -Location to print outputs from clusters
   # C                       -Anisotropy for IDW
   
@@ -100,25 +108,26 @@ MICE_DURR_serial <- function(df, response = "y", m = 10,
   
   if(nclusters > 1){
     require(parallel)
-    
-    # Make clusters for parallel computing
+
+    # Make clusters for parallel multiple imputation
     cl <- makeCluster(nclusters, outfile = outfile)
-    
+
     # Import necessary functions to each cluster
-    clusterExport(cl, c("elastic_net_DURR", "extract_best_cvm", "rmse"),
-                  envir=environment())
-    
+    clusterExport(cl, c("elastic_net_DURR", "extract_best_cvm", "rmse"))
+
     # Get parameters for every imputation model
-    results <- parLapply(cl = cl, df_copies, MICE_get_params_serial, 
-                        missing_idx = missing_idx,
-                        max_cycles = max_impute_cycles, ...)
+    results <- parLapply(cl = cl, df_copies, MICE_get_params_serial,
+                      missing_idx = missing_idx, max_cycles = max_impute_cycles,
+                      hyp_cycles = hyp_cycles, lambda_options = lambda_options,
+                      alpha_options = alpha_options, impute_tol = impute_tol, ...)
     stopCluster(cl)
   }
   else{
     # This provides the option to not do parallel computing
     results <- lapply(df_copies, MICE_get_params_serial,
-                     missing_idx = missing_idx,
-                     max_cycles = max_impute_cycles, ...)
+                     missing_idx = missing_idx, max_cycles = max_impute_cycles,
+                     hyp_cycles = hyp_cycles, lambda_options = lambda_options,
+                     alpha_options = alpha_options, impute_tol = impute_tol, ...)
   }
   # Pool the regression parameters together from each replicated data set
   params <- sapply(results, `[[`, "params")

@@ -7,7 +7,7 @@
 ## between spatial distances and temporal distances can be estimated
 
 IDW_ST <- function(data, newdata, response, 
-                   x_name = "lon", y_name = "lat", t_name = "t",
+                   x_name = "east", y_name = "north", t_name = "t",
                    idp = 2, nmax = 8, C = NULL, 
                    transformation={function (x) x},
                    reverse_transformation={function (x) x}, ...){

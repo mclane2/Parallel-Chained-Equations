@@ -29,7 +29,7 @@ ENCE_sync <- function(df, response = "y",
                  reverse_transformation = {function(x) x},
                  truth = NULL,
                  masked_idx = NULL,
-                 lambda_options = c(0.05, 0.1, 0.15, 0.2),
+                 lambda_options = c(0.2, 0.15, 0.1, 0.05),
                  alpha_options  = c(0.1, 0.35, 0.65, 0.9),
                  n_workers = 1,
                  ...){

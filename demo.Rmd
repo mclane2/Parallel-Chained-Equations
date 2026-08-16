@@ -1,0 +1,229 @@
+---
+title: "Parallel chained equations for rainfall imputation"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    theme: flatly
+    highlight: tango
+    code_folding: show
+    df_print: kable
+---
+
+# Synchronous chained equations for ENCE and MICE DURR 
+
+
+(give a bit more background here on the theory not in the readme, not too deep but brief overview for new reader)
+
+## Setup
+
+```{r setup, message=FALSE}
+source("R/idw.R")
+source("R/load_library.R")
+
+# Load simulated data
+rain <- read.csv("data/simulated_daily_rainfall.csv")
+rain <- rain[, c("stno", "east", "north", "t", "y")]
+
+# Sorts the table in place by stno, then t
+rain <- rain[order(rain$stno, rain$t), ]
+
+# Mask a fraction of the observed cells to validate against
+set.seed(541)
+observed_idx <- which(!is.na(rain$y))
+masked_idx   <- sort(sample(observed_idx, length(observed_idx) * 0.25))
+
+df_miss <- rain
+df_miss$y[masked_idx] <- NA           # hide masked
+```
+
+## Run Imputations
+
+```{r run-ENCE-R-serial, message=FALSE, results='hide'}
+source("R/ENCE_serial.R")
+time_ence_serial <- system.time({
+  imp_ence_serial <- ENCE_serial(df_miss, response = "y", max_cycles = 30,
+                     init_method = "idw",
+                     x_name = "east", y_name = "north", t_name = "t",
+                     C = 15000,
+                     transformation = sqrt,
+                     reverse_transformation = function(x) x^2,
+                     truth = rain$y, masked_idx = masked_idx,
+                     lambda_options = c(0.2, 0.15, 0.1, 0.05),
+                     alpha_options  = c(0.1, 0.35, 0.65, 0.9))
+})
+```
+
+```{r run-ENCE-R-synchronous, message=FALSE, results='hide'}
+source("R/ENCE_synchronous.R")
+time_ence_sync <- system.time({
+  imp_ence_sync <- ENCE_sync(df_miss, response = "y", max_cycles = 30,
+                     init_method = "idw",
+                     x_name = "east", y_name = "north", t_name = "t",
+                     C = 15000,
+                     transformation = sqrt,
+                     reverse_transformation = function(x) x^2,
+                     truth = rain$y, masked_idx = masked_idx,
+                     lambda_options = c(0.2, 0.15, 0.1, 0.05),
+                     alpha_options  = c(0.1, 0.35, 0.65, 0.9),
+                     n_workers = 6)
+})
+```
+
+```{r run-ENCE-C, message=FALSE, results='hide'}
+source("R/ENCE_C.R")
+time_ence_C <- system.time({
+  imp_ence_C <- ENCE_C(df_miss, response = "y", max_cycles = 30,
+                     init_method = "idw",
+                     x_name = "east", y_name = "north", t_name = "t",
+                     C = 15000,
+                     transformation = sqrt,
+                     reverse_transformation = function(x) x^2,
+                     truth = rain$y, masked_idx = masked_idx,
+                     lambda_options = c(0.2, 0.15, 0.1, 0.05),
+                     alpha_options  = c(0.1, 0.35, 0.65, 0.9),
+                     nthreads = 6L)
+})
+```
+
+```{r run-MICE_DURR_serial, message=FALSE, results='hide'}
+source("R/MICE_DURR_serial.R")
+time_mice_serial <- system.time({
+  imp_mice_serial <- MICE_DURR_serial(df_miss, response = "y", m = 1,
+                                 max_impute_cycles = 5, hyp_cycles = 2, 
+                                 init_method = "idw",
+                                 max_EM_cycles = 5,
+                                 nclusters = 1,
+                                 lambda_options = c(0.2, 0.15, 0.1, 0.05),
+                                 alpha_options  = c(0.1, 0.35, 0.65, 0.9),
+                                 outfile = NULL,
+                                 transformation = sqrt,
+                                 reverse_transformation = {function(x) x^2})
+})
+```
+
+```{r run-MICE_DURR_synchronous, message=FALSE, results='hide'}
+source("R/MICE_DURR_synchronous.R")
+time_mice_sync <- system.time({
+  imp_mice_sync <- MICE_DURR_sync(df_miss, response = "y", m = 1,
+                                 max_impute_cycles = 5, hyp_cycles = 2, 
+                                 init_method = "idw",
+                                 max_EM_cycles = 5,
+                                 nclusters = 1,
+                                 n_workers = 6L,
+                                 lambda_options = c(0.2, 0.15, 0.1, 0.05),
+                                 alpha_options  = c(0.1, 0.35, 0.65, 0.9),
+                                 outfile = NULL,
+                                 transformation = sqrt,
+                                 reverse_transformation = {function(x) x^2})
+})
+```
+
+```{r run-MICE_DURR_C, message=FALSE, results='hide'}
+source("R/MICE_DURR_C.R")
+time_mice_C <- system.time({
+  imp_mice_C <- MICE_DURR_C(df_miss, response = "y", m = 1,
+                                 max_impute_cycles = 5, hyp_cycles = 2, 
+                                 init_method = "idw",
+                                 max_EM_cycles = 5,
+                                 nclusters = 1,
+                                 nthreads = 6L,
+                                 lambda_options = c(0.2, 0.15, 0.1, 0.05),
+                                 alpha_options  = c(0.1, 0.35, 0.65, 0.9),
+                                 outfile = NULL,
+                                 transformation = sqrt,
+                                 reverse_transformation = {function(x) x^2})
+})
+```
+
+
+## Results
+```{r metrics}
+y_true <- rain$y[masked_idx]
+y_ence_serial <- imp_ence_serial$y[masked_idx]
+y_ence_sync   <- imp_ence_sync$y[masked_idx]
+y_ence_C      <- imp_ence_C$y[masked_idx]
+y_mice_serial <- imp_mice_serial$y[masked_idx]
+y_mice_sync   <- imp_mice_sync$y[masked_idx]
+y_mice_C      <- imp_mice_C$y[masked_idx]
+```
+
+
+```{r ENCE-serial-results, results='hold'}
+cat("ENCE R Serial:\n")
+cat("==========================================================\n")
+cat("Time: ", round(time_ence_serial["elapsed"], 2), "seconds\n")
+cat("==========================================================\n")
+cat("Validation Metrics:\n")
+cat("RMSE:",   sqrt(mean((y_ence_serial - y_true)^2)), "\n")
+cat("Bias %:", sum(y_ence_serial - y_true) / sum(y_true) * 100, "\n")
+cat("R2:",     1 - sum((y_ence_serial - y_true)^2) / sum((y_true - mean(y_true))^2), "\n")
+cat("SRMSE:",  sqrt(mean((y_ence_serial - y_true)^2)) / mean(y_true), "\n\n")
+```
+
+```{r ENCE-sync-results, results='hold'}
+cat("ENCE R Synchronous:\n")
+cat("==========================================================\n")
+cat("Time: ", round(time_ence_sync["elapsed"], 2), "seconds\n")
+cat("Speedup, R serial -> R parallel:", round(time_ence_serial["elapsed"] / time_ence_sync["elapsed"], 1), "x\n")
+cat("==========================================================\n")
+cat("Validation Metrics:\n")
+cat("RMSE:",   sqrt(mean((y_ence_sync - y_true)^2)), "\n")
+cat("Bias %:", sum(y_ence_sync - y_true) / sum(y_true) * 100, "\n")
+cat("R2:",     1 - sum((y_ence_sync - y_true)^2) / sum((y_true - mean(y_true))^2), "\n")
+cat("SRMSE:",  sqrt(mean((y_ence_sync - y_true)^2)) / mean(y_true), "\n\n")
+```
+
+```{r ENCE-C-results, results='hold'}
+cat("ENCE C implementation:\n")
+cat("==========================================================\n")
+cat("Time: ", round(time_ence_C["elapsed"], 2), "seconds\n")
+cat("Speedup, R serial -> C implementation:", round(time_ence_serial["elapsed"] / time_ence_C["elapsed"], 1), "x\n")
+cat("Speedup, R sync -> C implementation:", round(time_ence_sync["elapsed"] / time_ence_C["elapsed"], 1), "x\n")
+cat("==========================================================\n")
+cat("Validation Metrics:\n")
+cat("RMSE:",   sqrt(mean((y_ence_C - y_true)^2)), "\n")
+cat("Bias %:", sum(y_ence_C - y_true) / sum(y_true) * 100, "\n")
+cat("R2:",     1 - sum((y_ence_C - y_true)^2) / sum((y_true - mean(y_true))^2), "\n")
+cat("SRMSE:",  sqrt(mean((y_ence_C - y_true)^2)) / mean(y_true), "\n\n")
+```
+
+```{r MICE-DURR-serial-results, results='hold'}
+cat("MICE DURR R Serial:\n")
+cat("==========================================================\n")
+cat("Time: ", round(time_mice_serial["elapsed"], 2), "seconds\n")
+cat("==========================================================\n")
+cat("Validation Metrics:\n")
+cat("RMSE:",   sqrt(mean((y_mice_serial - y_true)^2)), "\n")
+cat("Bias %:", sum(y_mice_serial - y_true) / sum(y_true) * 100, "\n")
+cat("R2:",     1 - sum((y_mice_serial - y_true)^2) / sum((y_true - mean(y_true))^2), "\n")
+cat("SRMSE:",  sqrt(mean((y_mice_serial - y_true)^2)) / mean(y_true), "\n\n")
+```
+
+```{r MICE-DURR-sync-results, results='hold'}
+cat("MICE DURR R Synchronous:\n")
+cat("==========================================================\n")
+cat("Time: ", round(time_mice_sync["elapsed"], 2), "seconds\n")
+cat("Speedup, R serial -> R parallel:", round(time_mice_serial["elapsed"] / time_mice_sync["elapsed"], 1), "x\n")
+cat("==========================================================\n")
+cat("Validation Metrics:\n")
+cat("RMSE:",   sqrt(mean((y_mice_sync - y_true)^2)), "\n")
+cat("Bias %:", sum(y_mice_sync - y_true) / sum(y_true) * 100, "\n")
+cat("R2:",     1 - sum((y_mice_sync - y_true)^2) / sum((y_true - mean(y_true))^2), "\n")
+cat("SRMSE:",  sqrt(mean((y_mice_sync - y_true)^2)) / mean(y_true), "\n\n")
+```
+
+```{r MICE-DURR-C-results, results='hold'}
+cat("MICE DURR C Synchronous:\n")
+cat("==========================================================\n")
+cat("Time: ", round(time_mice_C["elapsed"], 2), "seconds\n")
+cat("Speedup, R serial -> C implementation:", round(time_mice_serial["elapsed"] / time_mice_C["elapsed"], 1), "x\n")
+cat("Speedup, R sync -> C implementation:", round(time_mice_sync["elapsed"] / time_mice_C["elapsed"], 1), "x\n")
+cat("==========================================================\n")
+cat("Validation Metrics:\n")
+cat("RMSE:",   sqrt(mean((y_mice_C - y_true)^2)), "\n")
+cat("Bias %:", sum(y_mice_C - y_true) / sum(y_true) * 100, "\n")
+cat("R2:",     1 - sum((y_mice_C - y_true)^2) / sum((y_true - mean(y_true))^2), "\n")
+cat("SRMSE:",  sqrt(mean((y_mice_C - y_true)^2)) / mean(y_true), "\n\n")
+```
