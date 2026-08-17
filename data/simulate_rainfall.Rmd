@@ -6,7 +6,7 @@ This file simulates station-level climate data using a spatiotemporal Gaussian p
 
 This code was used to create the file "simulated_daily_rainfall.csv" already on the repository. 
 Depending on the size of the dataset you choose, it can take a long time to run. 
-The "simulated_daily_rainfall.csv" in the repo is 1 year of daily observations across 50 stations (p = 50,  n =365)
+The "simulated_daily_rainfall.csv" in the repo is 1 year of daily observations across 200 stations (p = 200,  n =365)
 
 ```{r simulating rainfall}
 
@@ -28,7 +28,7 @@ library(spatstat.random)
 set.seed(222)
 
 # Here you can control the size of the dataset (number of stations and number of observations)
-no_stations <- 50  # p
+no_stations <- 200  # p
 no_times <- 365    # n
 stations <- runifpoint(no_stations, win = as.owin(ireland))
 stations <- cbind(stations$x, stations$y)
@@ -68,16 +68,6 @@ kappas <- c(1.5, 1.5)
 s_cov <- matern(sd, s_cov_pars, kappas[1])
 t_cov <- matern(td, t_cov_pars, kappas[2])
 
-# Our covariance is the Kronecker product of t_cov with s_cov
-# ie V = V_t %x% V_s
-
-# We just need to simulate data. This can be sped up a lot by taking 
-# advantage of the fact that
-
-# t(chol(V)) = t(chol(V_t)) %x% t(chol(V_s))
-
-L <- t(chol(t_cov)) %x% t(chol(s_cov))
-
 # Add a global mean and a small global spatial trend
 formula <- as.formula("y ~ east + north")
 beta <- c(12, -1.2e-05, 1.3e-06)
@@ -85,10 +75,16 @@ trend <- model.matrix(formula, df) %*% c(beta)
 
 # z -> random errors
 set.seed(222)
-z <- rnorm(no_stations * no_times)
+Z <- matrix(rnorm(no_stations * no_times),
+            nrow = no_stations, ncol = no_times)
 
-# Final simulated values
-df$y <- trend + (L %*% z)
+# changed from: L <- t(chol(t_cov)) %x% t(chol(s_cov))
+L_s <- t(chol(s_cov))
+L_t <- t(chol(t_cov))
+
+# changed from: df$y <- trend + (L %*% z)
+df$y <- as.vector(trend) + as.vector(L_s %*% Z %*% t(L_t))
+
 
 # Square data so it more closely follows the distribution observed
 # in Irish monthly rainfall
