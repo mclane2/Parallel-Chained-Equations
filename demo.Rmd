@@ -1,14 +1,15 @@
 ---
 title: "Parallel chained equations"
-output:
-  html_document:
+author: "Marc Lane"
+date: "17/08/2026"
+output: html_document
 ---
 
-This document showcases the algorithms developed for my thesis "Chained Equations for Incomplete Climate Networks", supervised by Brian O'Sullivan. This work builds on the imputation algorithms Elastic-net Chained Equations (ENCE) and Multiple Imputation by Chained Equations with Direct Use of Regularised Regression (MICE DURR) (https://doi.org/10.1002/joc.8513).
+This document showcases the algorithms developed for my thesis "Chained Equations for Incomplete Climate Networks", supervised by Brian O'Sullivan. This work builds on two imputation algorithms introduced in Brian's paper (https://doi.org/10.1002/joc.8513) Elastic-net Chained Equations (ENCE) and Multiple Imputation by Chained Equations with Direct Use of Regularised Regression (MICE DURR).
 
-ENCE and MICE DURR are regression based imputation methods, originally designed for filling missing spatiotemporal rainfall data collected by Met Eireann's monitoring network across the Republic of Ireland. ENCE and MICE DURR use the chained equations method, which is an iterative imputation procedure that fits a separate model for every incomplete variable in sequence. My thesis introduced a novel modification to the chained equations called synchronous chained equations that makes it a parallel algorithm.
+ENCE and MICE DURR were originally designed for filling missing data in spatiotemporal rainfall records collected by Met Éireann's monitoring network across the Republic of Ireland. ENCE and MICE DURR are built using the chained equations method, which is an iterative imputation procedure that fits a separate regression model for every incomplete variable in sequence. My thesis introduced a novel modification to chained equations called synchronous chained equations. Synchronous chained equations fits each model in a cycle at the same time, which makes the algorithm parallel.
 
-This file compares the original serial versions of ENCE and MICE DURR written entirely in R, the synchronous versions of ENCE and MICE DURR also in R, and the C implementations of ENCE and MICE DURR. This repository uses simulated daily data (data/simulated_daily_rainfall.csv), which simulates 1 year of daily rainfall in Ireland across 200 stations. The user can edit data/simulate_rainfall.Rmd to create a different dataset.
+This file compares 3 implementations of ENCE and MICE DURR: the original serial versions written entirely in R, the synchronous versions also in R, and the C implementation with synchronous updates parallelised across threads using OpenMP. This repository uses simulated daily data (data/simulated_daily_rainfall.csv), which simulates 1 year of daily rainfall in Ireland across 200 stations. The user can edit data/simulate_rainfall.Rmd to create a different dataset.
 
 
 ## Setup
@@ -24,14 +25,15 @@ if (!file.exists(so_path)) {
   system2("bash", c("-c", shQuote("cd src && bash build.sh")), stdout = TRUE, stderr = TRUE)
 )
   cat(build_log, sep = "\n")
-  if (!file.exists(so_path)) stop("Build failed: see the compiler output above.")
+  if (!file.exists(so_path)) stop("Compiling failed: see compiler output above.")
 }
 
 source("R/idw.R")
 source("R/load_library.R")
 
 # Set the number of cores on your machine for synchronous updates
-n_cores <- parallel::detectCores(logical = FALSE)
+# I usually set the number of cores manually here (n_cores <- 6L), since parallel::detectCores(logical = FALSE) doesn't reliably work on WSL/Linux
+n_cores <- parallel::detectCores(logical = FALSE) # See README note on github.
 if (is.na(n_cores)) {
   n_cores <- 2L  # assume there's 2 cores
   warning("Could not detect physical core count using parallel::detectCores(logical = FALSE), defaulting to 2 threads. Manually set n_cores to the number of cores on your machine.")
