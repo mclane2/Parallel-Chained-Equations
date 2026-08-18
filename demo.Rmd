@@ -21,10 +21,10 @@ so_path <- "src/ENCE_MICE_DURR_impute.so" # find .so file if you already compile
 # if C code hasn't been compiled yet
 if (!file.exists(so_path)) {
   cat("Compiling C source code... \n")
-  build_log <- suppressWarnings(
-  system2("bash", c("-c", shQuote("cd src && bash build.sh")), stdout = TRUE, stderr = TRUE)
+  compile_log <- suppressWarnings(
+  system2("bash", c("-c", shQuote("cd src && chmod +x compile.sh  && ./compile.sh")), stdout = TRUE, stderr = TRUE)
 )
-  cat(build_log, sep = "\n")
+  cat(compile_log, sep = "\n")
   if (!file.exists(so_path)) stop("Compiling failed: see compiler output above.")
 }
 

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 #
-# Filename: build.sh
+# Filename: compile.sh
 #
 # Description: Compiles the C source files into .so files (an R-loadable shared library) via R CMD SHLIB, with OpenMP
 #
 # To Compile input to terminal:
-# chmod +x build.sh
-# ./build.sh
+# chmod +x compile.sh
+# ./compile.sh
 #
 # Author: M. Lane
 # Version: 7.0 (Cleaned up for new repository)
@@ -30,4 +30,4 @@ R CMD SHLIB elastic_net_functions.c elastic_net.c ENCE_impute.c MICE_DURR_impute
 # Clean up .o files
 rm -f *.o
 
-echo "Built ENCE_MICE_DURR_impute.so"
+echo "Compiled ENCE_MICE_DURR_impute.so"
