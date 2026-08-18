@@ -161,7 +161,7 @@ Parallel-Chained-Equations/
 
 Please cite the following paper if you use this code: O'Sullivan, B., & Kelly, G. (2024). Infilling of high-dimensional rainfall networks through multiple imputation by chained equations. International Journal of Climatology, 44(9), 3075–3091. https://doi.org/10.1002/joc.8513
 
-Please contact me or Brian O'Sullivan (Met Éireann) if you want to use this code. 
+Please contact me or Brian O'Sullivan (Met Éireann) if you want to use this code. Please reach out if you have any issues with the code.
 
 ## Contact
 
