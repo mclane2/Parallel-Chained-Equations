@@ -1,7 +1,0 @@
-
-*.so
-*.o
-*.html
-.Rhistory
-.RData
-.Rproj.user/
