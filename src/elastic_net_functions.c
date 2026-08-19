@@ -22,7 +22,7 @@
  * 
  * Author: Marc Lane
  * Version: 5.0 
- * Date: 2026-08-12
+ * Date: 2026-08-19
  */
 #include <stdlib.h>
 #include <math.h>
@@ -108,7 +108,7 @@ static inline void update_g(const double *Z, int n, int p, int k, double delta, 
     /* Using the k-th row of C (either just computed or getting reused), update g */
     #pragma omp simd // vectorisation pragma for speeding up this computation
     for (int l = 0; l < p; ++l){
-        g[l] -= delta * C_k[l];  // Equation 2.3.13
+        g[l] -= delta * C_k[l];  // Equation 2.3.14
     }
 }
 
