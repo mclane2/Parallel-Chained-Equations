@@ -7,7 +7,6 @@ output: html_document
 
 This document showcases the algorithms developed for my thesis "Chained Equations for Incomplete Climate Networks", supervised by Brian O'Sullivan. This work builds on two imputation algorithms introduced in Brian's paper (https://doi.org/10.1002/joc.8513) Elastic-net Chained Equations (ENCE) and Multiple Imputation by Chained Equations with Direct Use of Regularised Regression (MICE DURR).
 
-ENCE and MICE DURR were originally designed for filling missing data in spatiotemporal rainfall records collected by Met Éireann's monitoring network across the Republic of Ireland. ENCE and MICE DURR are built using the chained equations method, which is an iterative imputation procedure that fits a separate regression model for every incomplete variable in sequence. My thesis introduced a novel modification to chained equations called synchronous chained equations. Synchronous chained equations fits each model in a cycle at the same time, which makes the algorithm parallel.
 
 This file compares 3 implementations of ENCE and MICE DURR: the original serial versions written entirely in R, the synchronous versions also in R, and the C implementation with synchronous updates parallelised across threads using OpenMP. This repository uses simulated daily data (data/simulated_daily_rainfall.csv), which simulates 1 year of daily rainfall in Ireland across 200 stations. The user can edit data/simulate_rainfall.Rmd to create a different dataset.
 
